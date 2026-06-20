@@ -191,6 +191,9 @@ static bool g_uploadWasForceTriggered = false;
 extern volatile bool g_monitorActivityFlag;
 extern volatile bool g_stopMonitorFlag;
 extern volatile bool g_abortUploadFlag;
+#else
+static bool g_uploadWasForceTriggered = false;
+extern volatile bool g_abortUploadFlag;
 #endif
 
 // ============================================================================

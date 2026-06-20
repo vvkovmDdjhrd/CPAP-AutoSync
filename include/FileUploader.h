@@ -103,8 +103,12 @@ private:
 
 public:
     // Allow main FSM to trigger pre-connections before SD acquisition
+    #ifdef ENABLE_SMB_UPLOAD
     SMBUploader* getSmbUploader() { return smbUploader; }
+    #endif
+    #ifdef ENABLE_SLEEPHQ_UPLOAD
     SleepHQUploader* getCloudUploader() { return sleephqUploader; }
+    #endif
 
     FileUploader(Config* cfg, WiFiManager* wifi);
     ~FileUploader();

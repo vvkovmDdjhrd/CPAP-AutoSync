@@ -178,12 +178,21 @@ def generate_header(*args, **kwargs):
         symbol="setup_html_gz",
         inject_tz=True,
     )
+    c_defines = env.ParseFlags(env.get("BUILD_FLAGS",[])).get("CPPDEFINES",[])
 
-    _process_html(
-        input_file="src/web/web_ui.html",
-        output_file="include/web_ui_gz.h",
-        symbol="web_ui_gz",
-        inject_tz=False,
-    )
+    if "ENABLE_OTA_UPDATES" in c_defines:
+        _process_html(
+            input_file="src/web/web_ui.html",
+            output_file="include/web_ui_gz.h",
+            symbol="web_ui_gz",
+            inject_tz=False,
+        )
+    else:
+        _process_html(
+            input_file="src/web/web_ui_no_ota.html",
+            output_file="include/web_ui_gz.h",
+            symbol="web_ui_gz",
+            inject_tz=False,
+        )   
 
 generate_header()

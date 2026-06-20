@@ -1,0 +1,1342 @@
+<!DOCTYPE html><html><head>
+<title>CPAP Uploader</title><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0f1923;color:#c7d5e0;min-height:100vh;padding:16px;overflow-x:hidden}
+.wrap{max-width:900px;margin:0 auto;overflow-x:hidden}
+h1{font-size:1.5em;color:#fff;margin-bottom:2px}
+.sub{color:#66c0f4;font-size:0.85em;margin-bottom:14px}
+nav{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+nav button{padding:7px 14px;border-radius:6px;background:#2a475e;color:#c7d5e0;border:none;cursor:pointer;font-size:0.84em;transition:background .2s}
+nav button.act{background:#66c0f4;color:#0f1923;font-weight:700}
+nav button:hover:not(.act){background:#3a5a7e}
+.page{display:none}.page.on{display:block}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:12px;margin-bottom:14px}
+.card{background:#1b2838;border:1px solid #2a475e;border-radius:10px;padding:15px}
+.card h2{font-size:.8em;text-transform:uppercase;letter-spacing:1px;color:#66c0f4;margin-bottom:9px;border-bottom:1px solid #2a475e;padding-bottom:6px}
+.row{display:flex;justify-content:space-between;padding:3px 0;font-size:.85em}
+.k{color:#8f98a0}.v{color:#c7d5e0;font-weight:500;text-align:right;max-width:55%}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-weight:700;font-size:.76em}
+.bi{background:#2a475e;color:#8f98a0}.bl{background:#1a3a1a;color:#44ff44;animation:puG 2.5s ease-in-out infinite}
+.ba,.bu{background:#1a2a4a;color:#66c0f4;animation:puB 2.5s ease-in-out infinite}
+.bc,.br{background:#3a2a1a;color:#ffaa44;animation:puA 2.5s ease-in-out infinite}
+.bco{background:#1a3a1a;color:#44ff44;animation:puG 2.5s ease-in-out infinite}
+.bm{background:#2a1a3a;color:#bb88ff;animation:puP 2.5s ease-in-out infinite}
+@keyframes puG{0%,100%{box-shadow:0 0 3px rgba(68,255,68,.3)}50%{box-shadow:0 0 10px rgba(68,255,68,.6)}}
+@keyframes puB{0%,100%{box-shadow:0 0 3px rgba(102,192,244,.3)}50%{box-shadow:0 0 10px rgba(102,192,244,.6)}}
+@keyframes puA{0%,100%{box-shadow:0 0 3px rgba(255,170,68,.3)}50%{box-shadow:0 0 10px rgba(255,170,68,.6)}}
+@keyframes puP{0%,100%{box-shadow:0 0 3px rgba(187,136,255,.3)}50%{box-shadow:0 0 10px rgba(187,136,255,.6)}}
+@keyframes puM{0%,100%{box-shadow:0 0 4px rgba(255,204,68,.2);border-color:#2a6a8a}50%{box-shadow:0 0 14px rgba(255,204,68,.5);border-color:#ccaa33}}
+.mode-badge{display:inline-block;background:#1a3a4a;border:1px solid #2a6a8a;border-radius:4px;padding:1px 8px;color:#66c0f4;font-weight:700;font-size:.95em;animation:puM 2.5s ease-in-out infinite}
+.prog{background:#2a475e;border-radius:5px;height:8px;margin-top:5px;overflow:hidden}
+.pf{background:linear-gradient(90deg,#66c0f4,#44aaff);height:100%;border-radius:5px;transition:width .5s}
+.actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:7px}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:6px;font-size:.84em;font-weight:600;text-decoration:none;border:none;cursor:pointer;transition:all .2s}
+.btn .ic{display:inline-flex;align-items:center;justify-content:center;width:1.1em;height:1em;line-height:1;font-style:normal}
+.bp{background:#66c0f4;color:#0f1923}.bp:hover{background:#88d0ff}
+.bs{background:#2a475e;color:#c7d5e0}.bs:hover{background:#3a5a7e}
+.bd{background:#c0392b;color:#fff}.bd:hover{background:#e04030}
+.bo{background:#aa6622;color:#fff}.bo:hover{background:#cc8833}
+.bg{background:#2f8f57;color:#fff}.bg:hover{background:#3aaa6a}
+.sig-exc{color:#44ff44}.sig-good{color:#88dd44}.sig-fair{color:#ddcc44}.sig-weak{color:#dd8844}.sig-vweak{color:#dd4444}
+.toast{position:fixed;right:12px;bottom:12px;max-width:310px;background:#1b2838;border:1px solid #2a475e;color:#c7d5e0;padding:9px 11px;border-radius:8px;font-size:.82em;box-shadow:0 5px 20px rgba(0,0,0,.4);opacity:0;transform:translateY(7px);transition:opacity .2s,transform .2s;pointer-events:none;z-index:9999}
+.toast.on{opacity:1;transform:translateY(0)}.toast.ok{border-color:#2f8f57}.toast.er{border-color:#c0392b}.toast.warn{border-color:#c07830;color:#f0c070}
+#log-box{background:#1b2838;border:1px solid #2a475e;border-radius:6px;padding:12px;white-space:pre-wrap;word-wrap:break-word;font-family:Consolas,Monaco,monospace;font-size:11.5px;height:68vh;overflow-y:auto}
+#cfg-box{background:#1b2838;border:1px solid #2a475e;border-radius:6px;padding:12px;white-space:pre-wrap;font-family:Consolas,Monaco,monospace;font-size:11.5px;color:#aaddff;overflow-x:auto}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-bottom:12px}
+.stat-box{background:#16213e;padding:12px;border-radius:8px;text-align:center;border:1px solid #2a475e}
+.sv{font-size:1.55em;color:#66c0f4;display:block;margin:3px 0;font-family:monospace}.sl{color:#8f98a0;font-size:.8em}
+.chart{background:#16213e;padding:12px;border-radius:8px;border:1px solid #2a475e;overflow-x:auto;min-height:160px}
+.br2{display:flex;align-items:center;height:15px;margin:2px 0;font-size:.76em;font-family:monospace}
+.bl2{width:42px;color:#8f98a0;text-align:right;padding-right:6px}.bt{flex-grow:1;background:#0f1923;height:100%;border-radius:2px;overflow:hidden}
+.bf{height:100%;transition:width .3s}.bf.a{background:#ff4444}.bf.i{background:#2a475e}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-left:7px}
+.dot.busy{background:#ff4444;box-shadow:0 0 6px #ff4444}.dot.idle{background:#44ff44;box-shadow:0 0 6px #44ff44}
+.fg{margin-bottom:12px}.fg label{display:block;margin-bottom:4px;color:#8f98a0;font-size:.86em}
+.fg input{width:100%;padding:8px;background:#0f1923;border:1px solid #2a475e;color:#fff;border-radius:6px;font-size:.86em}
+.fg input:focus{outline:none;border-color:#66c0f4}
+.sm{margin-top:7px;font-size:.86em;min-height:1.2em}.sm.ok{color:#44ff44}.sm.er{color:#ff4444}.sm.info{color:#66c0f4}
+.wb{background:#3a2a1a;border:1px solid #aa6622;border-radius:8px;padding:12px;margin-bottom:12px}
+.wb h3{color:#ffaa44;font-size:.86em;margin-bottom:5px}.wb ul{padding-left:16px;color:#c7d5e0;font-size:.82em}.wb li{margin-bottom:3px}
+.pfc{background:linear-gradient(90deg,#aa66ff,#cc88ff)}
+.be{margin-bottom:13px}.bh{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.bt-s{color:#66c0f4;font-size:.82em;font-weight:700;letter-spacing:.5px}
+.bt-c{color:#aa66ff;font-size:.82em;font-weight:700;letter-spacing:.5px}
+.bd-i{font-size:.79em;color:#8f98a0;margin-top:4px;min-height:1.1em;padding-left:2px}
+.hdr{margin-bottom:2px}
+.hdr svg{height:108px;width:auto;display:block}
+.hdr-spin{transform-origin:25px 25px;animation:hSpin 8s linear infinite}
+@keyframes hSpin{100%{transform:rotate(360deg)}}
+.hdr-arrow{animation:hUp 2s ease-in-out infinite}
+@keyframes hUp{0%{transform:translateY(1.5px);opacity:0}40%{opacity:1}100%{transform:translateY(-4px);opacity:0}}
+.hdr-wave{animation:hPulse 3.5s ease-in-out infinite}
+@keyframes hPulse{0%,100%{opacity:.6}50%{opacity:1}}
+.hw1{animation:hWifi 1.5s infinite 0s}.hw2{animation:hWifi 1.5s infinite .25s}.hw3{animation:hWifi 1.5s infinite .5s}
+@keyframes hWifi{0%,100%{opacity:.4}50%{opacity:1}}
+#reboot-overlay{display:none;background:#1a2a1a;border:1px solid #2f8f57;border-radius:10px;padding:16px 20px;margin-bottom:14px;text-align:center;animation:rbPulse 2.5s ease-in-out infinite}
+#reboot-overlay h3{color:#44ff44;font-size:1em;margin-bottom:6px}
+#reboot-overlay p{color:#a0c0b0;font-size:.84em;line-height:1.5}
+@keyframes rbPulse{0%,100%{border-color:#2f8f57}50%{border-color:#44ff44}}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+@keyframes mtPulse{0%,100%{border-color:#cc3333}50%{border-color:#ff6666}}
+.log-spinner{display:inline-block;width:14px;height:14px;border:2px solid #2a475e;border-top-color:#66c0f4;border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:6px}
+#mon-active-banner{display:none;background:#2a1a2a;border:1px solid #8b4dbb;border-radius:10px;padding:14px 18px;margin-bottom:14px;text-align:center;animation:monPulse 2.5s ease-in-out infinite}
+#mon-active-banner h3{color:#bb88ff;font-size:1em;margin-bottom:6px}
+#mon-active-banner p{color:#b0a0c0;font-size:.84em;line-height:1.5}
+@keyframes monPulse{0%,100%{border-color:#8b4dbb}50%{border-color:#bb88ff}}
+@media(max-width:600px){.hdr svg{height:108px}nav{gap:4px}nav button{padding:5px 9px;font-size:.78em}.log-btns{flex-direction:column;gap:4px}.log-btns button{width:100%}}
+</style></head><body>
+<div class=wrap>
+<div class=hdr>
+<svg viewBox="0 0 480 160" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI',system-ui,-apple-system,sans-serif" preserveAspectRatio="xMidYMid meet">
+<defs>
+<style>
+.spin-ring{transform-origin:80px 80px;animation:hSpin 8s linear infinite}
+.arrow-anim{animation:hUp 2s ease-in-out infinite}
+.pulse-wave{animation:hPulse 3.5s ease-in-out infinite}
+.wifi-1{animation:hWifi 1.5s infinite 0s}
+.wifi-2{animation:hWifi 1.5s infinite 0.25s}
+.wifi-3{animation:hWifi 1.5s infinite 0.5s}
+</style>
+<linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+<stop offset="0%" stop-color="#0f1923"/>
+<stop offset="100%" stop-color="#0f1923"/>
+</linearGradient>
+<linearGradient id="circleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+<stop offset="0%" stop-color="#1a6b8a"/>
+<stop offset="100%" stop-color="#0d4a6b"/>
+</linearGradient>
+<linearGradient id="waveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+<stop offset="0%" stop-color="#2dd4bf"/>
+<stop offset="50%" stop-color="#38bdf8"/>
+<stop offset="100%" stop-color="#818cf8"/>
+</linearGradient>
+<linearGradient id="arrowGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+<stop offset="0%" stop-color="#38bdf8"/>
+<stop offset="100%" stop-color="#2dd4bf"/>
+</linearGradient>
+<filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+<feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+<feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+</filter>
+<filter id="waveGlow" x="-10%" y="-50%" width="120%" height="200%">
+<feGaussianBlur stdDeviation="1.8" result="coloredBlur"/>
+<feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+</filter>
+</defs>
+<rect width="480" height="160" rx="18" fill="url(#bgGrad)"/>
+<circle class="spin-ring" cx="80" cy="80" r="58" fill="none" stroke="url(#waveGrad)" stroke-width="3" stroke-dasharray="126 13 78 13 48 13 30 13 18 13" stroke-linecap="round" opacity="0.85"/>
+<circle cx="80" cy="80" r="54" fill="url(#circleGrad)"/>
+<circle cx="80" cy="80" r="54" fill="none" stroke="url(#waveGrad)" stroke-width="1" opacity="0.6"/>
+<g transform="translate(52,52)">
+<path d="M7,0 L29,0 L36,7 L36,34 Q36,36 34,36 L2,36 Q0,36 0,34 L0,2 Q0,0 2,0 Z" fill="#0a2233" stroke="#38bdf8" stroke-width="1.2" opacity="0.9"/>
+<rect x="6" y="24" width="4" height="10" rx="1" fill="#2dd4bf" opacity="0.85"/>
+<rect x="12" y="24" width="4" height="10" rx="1" fill="#2dd4bf" opacity="0.85"/>
+<rect x="18" y="24" width="4" height="10" rx="1" fill="#2dd4bf" opacity="0.85"/>
+<rect x="24" y="24" width="4" height="10" rx="1" fill="#2dd4bf" opacity="0.85"/>
+<line x1="29" y1="0" x2="36" y2="7" stroke="#38bdf8" stroke-width="1.2" opacity="0.7"/>
+</g>
+<g transform="translate(96,70)" filter="url(#glow)">
+<g class="arrow-anim">
+<line x1="0" y1="22" x2="0" y2="6" stroke="url(#arrowGrad)" stroke-width="3" stroke-linecap="round"/>
+<polyline points="-6,10 0,2 6,10" fill="none" stroke="url(#arrowGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<line x1="-7" y1="25" x2="7" y2="25" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+</g>
+<g transform="translate(80,108)" filter="url(#waveGlow)">
+<path class="pulse-wave" d="M-28,0 C-24,-2 -22,-2 -18,0 C-14,2 -12,2 -8,0 C-4,-10 -2,-10 2,-4 C4,-1 5,8 8,8 C11,8 12,1 15,-4 C18,-10 20,-10 24,-4 C26,0 28,0 28,0" fill="none" stroke="url(#waveGrad)" stroke-width="2.2" stroke-linecap="round"/>
+</g>
+<g transform="translate(80,36)" filter="url(#glow)">
+<path class="wifi-1" d="M-10,10 Q0,-2 10,10" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round"/>
+<path class="wifi-2" d="M-6,14 Q0,8 6,14" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round"/>
+<circle class="wifi-3" cx="0" cy="17" r="2.2" fill="#38bdf8"/>
+</g>
+<text x="154" y="68" font-size="38" font-weight="700" letter-spacing="-0.5" fill="white">CPAP</text>
+<text x="154" y="110" font-size="38" font-weight="700" letter-spacing="-0.5" fill="url(#waveGrad)">AutoSync</text>
+<rect x="154" y="125" width="272" height="2.5" rx="1.25" fill="url(#waveGrad)" opacity="0.7"/>
+</svg>
+</div>
+<p class=sub id=sub>Connecting...</p>
+<div id=reboot-overlay><h3>&#8635; Connection lost &mdash; reconnecting&hellip;</h3><p>Trying to reconnect to the device now.<br>This can happen if your phone or browser paused this page in the background, if the device is temporarily busy, or if it is restarting.</p><p>If everything is normal, this page should recover automatically within a few seconds.</p></div>
+<div id=mon-active-banner><h3>&#128270; SD Activity Monitoring is active</h3><p>All automatic uploads are <strong>paused</strong> while monitoring is running.<br>Go to the <strong>SD Activity</strong> tab and click <strong>Stop</strong> to resume normal operation.</p></div>
+<div id=multitab-banner style="display:none;background:#3a1a1a;border:1px solid #cc3333;border-radius:10px;padding:14px 18px;margin-bottom:14px;text-align:center;animation:mtPulse 2.5s ease-in-out infinite"><h3 style="color:#ff6666;font-size:1em;margin-bottom:6px">&#9888; Multiple tabs/browsers detected</h3><p style="color:#c0a0a0;font-size:.84em;line-height:1.5">This device has very limited memory. Multiple connections cause <strong>heap fragmentation</strong>, network contention, and can trigger <strong>watchdog reboots</strong> during uploads.<br>Please <strong>close all other tabs/browsers</strong> connected to this device. This tab has throttled its polling to reduce impact.</p></div>
+<div id=brownout-banner style="display:none;background:#3a2a0a;border:1px solid #cc8800;border-radius:10px;padding:14px 18px;margin-bottom:14px;text-align:center"><h3 style="color:#ffaa00;font-size:1em;margin-bottom:6px">&#9888; Brownout Detection Disabled</h3><p style="color:#c0b090;font-size:.84em;line-height:1.5">BROWNOUT_DETECT is set to OFF in config.txt. The device will <strong>not</strong> reset on power drops &mdash; this may cause data corruption.</p></div>
+<nav>
+<button id=t-dash onclick="tab('dash')" class=act>Dashboard</button>
+<button id=t-logs onclick="tab('logs')">Logs</button>
+<button id=t-cfg onclick="tab('cfg')">Config</button>
+<button id=t-mon onclick="tab('mon')">SD Activity</button>
+<button id=t-mem onclick="tab('mem')">System</button>
+<button id=t-ota onclick="tab('ota')">Reboot</button>
+</nav>
+
+<!-- DASHBOARD -->
+<div id=dash class="page on">
+<div class=cards>
+<div class=card><h2>Upload Engine</h2>
+<div class=row><span class=k>State</span><span id=d-st class=v></span></div>
+<div class=row><span class=k>In state</span><span id=d-ins class=v></span></div>
+<div class=row><span class=k>Upload mode</span><span id=d-mode class=v></span></div>
+<div class=row><span class=k>Upload window</span><span id=d-win class=v></span></div>
+<div class=row><span class=k>Inactivity threshold</span><span id=d-inact class=v></span></div>
+<div class=row><span class=k>Exclusive access</span><span id=d-excl class=v></span></div>
+<div class=row><span class=k>Cooldown</span><span id=d-cool class=v></span></div>
+<div class=row><span class=k>Next full upload</span><span id=d-next class=v></span></div>
+</div>
+<div class=card><h2>System</h2>
+<div class=row><span class=k>Time</span><span id=d-time class=v></span></div>
+<div class=row><span class=k>Time synced</span><span id=d-tsync class=v></span></div>
+<div class=row><span class=k>Free heap</span><span id=d-fh class=v></span></div>
+<div class=row><span class=k>Max alloc</span><span id=d-ma class=v></span></div>
+<div class=row><span class=k>WiFi</span><span id=d-wifi class=v></span></div>
+<div class=row><span class=k>Endpoint</span><span id=d-ep class=v></span></div>
+<div class=row><span class=k>Timezone</span><span id=d-tz class=v></span></div>
+<div class=row><span class=k>Uptime</span><span id=d-up class=v></span></div>
+</div>
+</div>
+<div class=cards>
+<div class=card style="grid-column:1/-1"><h2>Upload Progress</h2>
+<div class=be id=d-be-cloud style=display:none>
+<div class=bh><span class=bt-s style=color:#aa66ff>SleepHQ Cloud</span><span id=d-cloud-st class=v>—</span></div>
+<div class=prog><div id=d-pf-cloud class=pf style="width:0%;background:linear-gradient(90deg,#8a4fd0,#aa66ff)"></div></div>
+<div id=d-cloud-det class=bd-i></div>
+</div>
+<div class=be id=d-be-smb style=display:none>
+<div class=bh><span class=bt-s style=color:#66c0f4>NAS (SMB)</span><span id=d-smb-st class=v>—</span></div>
+<div class=prog><div id=d-pf-smb class=pf style=width:0%></div></div>
+<div id=d-smb-det class=bd-i></div>
+</div>
+<div class=row style="border-top:1px solid #2a475e;padding-top:8px;margin-top:2px"><span class=k>Status</span><span id=d-fst class=v></span></div>
+</div>
+</div>
+<div id=d-mode-help style="background:#16213e;border:1px solid #2a475e;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:.82em;color:#8f98a0;line-height:1.5"></div>
+<div style="border:1px solid #8b2020;border-radius:10px;padding:15px;margin-bottom:14px">
+<h2 style="font-size:.8em;text-transform:uppercase;letter-spacing:1px;color:#e04030;margin-bottom:10px;border-bottom:1px solid #8b2020;padding-bottom:6px">Danger Zone</h2>
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+<div style="flex:1;min-width:200px">
+<button id=btn-up class="btn bo" onclick=triggerUpload()><span class=ic>&#9650;</span> Force Upload</button>
+<div style="border-top:2px solid #aa6622;margin:8px 0;width:100%"></div>
+<p style="font-size:.78em;color:#8f98a0;line-height:1.45" id=d-danger-upload>Immediately takes control of the SD card. If the CPAP <strong style="color:#ffaa44">attempts to write during the upload</strong>, it may cause a <strong style="color:#ffaa44">reboot or SD card error</strong> (requiring SD card reinsertion). Only use when therapy is <strong style="color:#ffaa44">not running and not planned to start soon</strong>.</p>
+</div>
+<div style="flex:1;min-width:200px;text-align:right">
+<button id=btn-rst class="btn bd" onclick=resetState()><span class=ic>&#9762;</span> Reset State</button>
+<div style="border-top:2px solid #c0392b;margin:8px 0;width:100%"></div>
+<p style="font-size:.78em;color:#8f98a0;line-height:1.45;text-align:left" id=d-danger-reset>Erases upload tracking state and reboots. All data will be re-scanned and re-uploaded from scratch. Under normal use this is <strong style="color:#ffaa44">never needed</strong>. Only use for persistent de-sync states (files show uploaded but missing, or progress is wrong).</p>
+</div>
+</div>
+</div>
+</div>
+
+<!-- LOGS -->
+<div id=logs class=page>
+<div class=card style="margin-bottom:10px">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:6px">
+<h2 style=margin:0>System Logs <span id=log-st style="font-size:.9em;color:#8f98a0;font-weight:400"></span></h2>
+<div class=log-btns style="display:flex;gap:6px;flex-wrap:wrap">
+<button class="btn bg" onclick=downloadSavedLogs() title="Download all logs (saved + current) for troubleshooting">&#11015; Download All Logs</button>
+<button class="btn bs" onclick=copyLogBuf() title="Copy all buffered log lines to clipboard">&#128203; Copy to clipboard</button>
+<button class="btn bs" onclick=clearLogBuf()>&#128465; Clear buffer</button>
+</div>
+</div>
+<div id=log-box>Loading...</div>
+</div>
+</div>
+
+<!-- CONFIG -->
+<div id=cfg class=page>
+<div id=cfg-pcnt-banner style="display:none;background:#1a2a3a;border:1px solid #2a5070;border-radius:6px;padding:10px 14px;margin-bottom:10px;font-size:.84em;color:#8faab8;line-height:1.5">
+&#9432; <strong style="color:#66c0f4">Smart mode unavailable:</strong> This CPAP uses 1-bit SD communication (no DAT3 activity). If <code>UPLOAD_MODE=smart</code> is set, it will be automatically overridden to <code>scheduled</code> mode at boot.
+</div>
+<div class=card style="margin-bottom:12px">
+<h2>Setup Wizard</h2>
+<p style="font-size:.82em;color:#8f98a0;margin-bottom:10px;line-height:1.5">Use the visual setup wizard to configure WiFi, timezone, upload schedule, SleepHQ, and network share settings &mdash; no manual editing required.</p>
+<a href="/setup" class="btn bp" style="text-decoration:none">&#9881; Open Setup Wizard</a>
+</div>
+</div>
+
+<!-- MONITOR -->
+<div id=mon class=page>
+<div class=card style="margin-bottom:10px"><h2>SD Activity Monitor</h2>
+<p style="font-size:.85em;color:#c7d5e0;line-height:1.5;margin-bottom:10px">Monitors SD card bus activity in real time. Start monitoring when your CPAP machine is on to observe write patterns.</p>
+<div id=mon-upwarn style="display:none;background:#2a2a1a;border:1px solid #665522;border-radius:6px;padding:9px 13px;margin-bottom:10px;font-size:.84em;color:#ddcc88">&#9889; Upload in progress &mdash; monitoring cannot start until the upload finishes.</div>
+<div class=actions>
+<button id=btn-mst class="btn bp" onclick=startMon()>Start Monitoring</button>
+<button id=btn-msp class="btn bd" onclick=stopMon() style=display:none>Stop</button>
+<button class="btn bs" onclick=openProfilerWizard()>&#9881; Profiler Wizard</button>
+</div>
+</div>
+<div class=stats-grid>
+<div class=stat-box><span class=sl>Pulse Count (1s)</span><span class=sv id=m-p>--</span></div>
+<div class=stat-box><span class=sl>Consecutive Idle</span><span class=sv id=m-i>--</span></div>
+<div class=stat-box><span class=sl>Longest Idle</span><span class=sv id=m-l>--</span></div>
+<div class=stat-box><span class=sl>Active/Idle</span><span class=sv id=m-r>--</span></div>
+</div>
+<div class=card style="margin-bottom:10px">
+<h2>Activity Timeline <span style="font-size:.65em;color:#8f98a0;font-weight:400">&nbsp;last ~2 min &nbsp;<span style="display:inline-block;width:12px;height:3px;background:#ff4444;vertical-align:middle;margin-right:3px;border-radius:2px"></span>Bus Activity</span></h2>
+<div style="background:#0f1923;border-radius:6px;padding:8px 4px 2px">
+<svg id=mon-svg viewBox="0 0 600 120" preserveAspectRatio="none" style="width:100%;height:120px;display:block"></svg>
+</div>
+<div style="display:flex;justify-content:space-between;font-size:.72em;color:#3a5070;padding:2px 6px 0"><span>~2m ago</span><span>~1m ago</span><span>now</span></div>
+</div>
+<div class=card>
+<h2>Card Activity Log <span style="font-size:.65em;color:#8f98a0;font-weight:400">(client-side, up to 2000 entries / 24h)</span></h2>
+<div style="overflow-y:auto;max-height:300px;margin-top:8px">
+<table id=mon-log-tbl style="width:100%;border-collapse:collapse;font-family:monospace;font-size:.78em">
+<thead><tr style="color:#66c0f4;border-bottom:1px solid #2a475e;text-align:left"><th style="padding:4px 8px">Timestamp</th><th style="padding:4px 8px">Pulses</th><th style="padding:4px 8px">Idle (s)</th><th style="padding:4px 8px">Since Last</th></tr></thead>
+<tbody id=mon-log-body><tr><td colspan=4 style="padding:8px;color:#8f98a0"><em>Start monitoring to collect data...</em></td></tr></tbody>
+</table>
+</div>
+</div>
+</div>
+
+
+<!-- PROFILER WIZARD MODAL -->
+<div id="prof-wiz" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;overflow:auto;padding:16px">
+<div style="background:#1b2838;border:1px solid #66c0f4;border-radius:12px;padding:20px;max-width:550px;width:100%;box-sizing:border-box;box-shadow:0 10px 40px rgba(102,192,244,0.2);margin:auto">
+<h2 style="color:#fff;margin-bottom:10px;font-size:1.4em">&#9881; CPAP Profiler Wizard</h2>
+<p style="font-size:0.9em;color:#c7d5e0;line-height:1.5;margin-bottom:20px">
+This tool will measure your CPAP machine's specific SD card writing behavior to help you tune <strong style="color:#66c0f4">INACTIVITY_SECONDS</strong>.
+</p>
+<div style="background:#0f1923;padding:15px;border-radius:8px;margin-bottom:20px;border:1px solid #2a475e">
+<ol style="font-size:0.85em;color:#8f98a0;padding-left:20px;line-height:1.6">
+<li>Ensure the SD card is physically inserted into the CPAP.</li>
+<li>Put on your CPAP mask, turn the machine <strong>ON</strong>, and <strong style="color:#ffcc44">start a therapy session</strong> &mdash; breathe in and out as you would during normal sleep. If your machine does not auto-start airflow on breath detection, press its start button.</li>
+<li>Once the machine is actively blowing air and you are breathing normally, click <strong>Start Profiling</strong> below.</li>
+<li><strong style="color:#ffcc44">Continue breathing steadily</strong> &mdash; do not pause or hold your breath. The profiler measures real SD write gaps during active therapy.</li>
+<li>Wait 2&ndash;3 minutes. The wizard will record the longest continuous silence between SD writes and suggest an <strong>INACTIVITY_SECONDS</strong> value.</li>
+</ol>
+</div>
+<div style="text-align:center;margin-bottom:20px">
+<div style="font-size:1.1em;color:#8f98a0;margin-bottom:5px">Longest measured silence:</div>
+<div id="prof-max-idle" style="font-size:2.8em;color:#44ff44;font-family:monospace;font-weight:bold">0.0s</div>
+</div>
+<div id="prof-rec-box" style="display:none;background:#1a3a1a;border:1px solid #2f8f57;padding:12px;border-radius:6px;margin-bottom:20px">
+<div style="font-size:0.9em;color:#c7d5e0">
+Recommended <strong style="color:#44ff44">INACTIVITY_SECONDS</strong>: <span id="prof-rec-val" style="font-weight:bold;font-size:1.2em;color:#fff">--</span>
+</div>
+<div style="font-size:0.75em;color:#8f98a0;margin-top:4px">(Longest silence + 4 second safety margin)</div>
+</div>
+<div style="display:flex;gap:10px;justify-content:flex-end">
+<button id="btn-prof-cancel" class="btn bs" onclick="document.getElementById('prof-wiz').style.display='none'">Close</button>
+<button id="btn-prof-start" class="btn bp" onclick="startProfiler()" style="background:#aa66ff;color:#fff">Start Profiling</button>
+</div>
+</div>
+</div>
+
+<!-- SYSTEM (was MEMORY) -->
+<div id=mem class=page>
+<div class=card style="margin-bottom:10px"><h2>Runtime Overview <span style="font-size:.7em;color:#8f98a0;font-weight:400">(live, 2s)</span></h2>
+<div class=stats-grid>
+<div class=stat-box><span class=sl>Free Heap</span><span class=sv id=hd-fh style="color:#66c0f4">—</span><span class=sl style="margin-top:6px">Min (2m)</span><span class=sv id=hd-fh-min style="color:#ddaa44">—</span></div>
+<div class=stat-box><span class=sl>Max Contiguous</span><span class=sv id=hd-ma style="color:#aa66ff">—</span><span class=sl style="margin-top:6px">Min (2m)</span><span class=sv id=hd-ma-min style="color:#ddaa44">—</span></div>
+<div class=stat-box><span class=sl>CPU Core 0</span><span class=sv id=hd-c0 style="color:#ff6b6b">—</span><span class=sl style="margin-top:6px">WiFi / System</span></div>
+<div class=stat-box><span class=sl>CPU Core 1</span><span class=sv id=hd-c1 style="color:#ffd93d">—</span><span class=sl style="margin-top:6px">Application</span></div>
+</div>
+</div>
+<div class=card style="margin-bottom:10px">
+<h2>Heap History <span style="font-size:.65em;color:#8f98a0;font-weight:400">&nbsp;last ~2 min &nbsp;<span style="display:inline-block;width:12px;height:3px;background:#5c9ade;vertical-align:middle;margin-right:3px;border-radius:2px"></span>Free &nbsp;<span style="display:inline-block;width:12px;height:3px;background:#aa66ff;vertical-align:middle;margin-right:3px;border-radius:2px"></span>Max Alloc</span></h2>
+<div style="background:#0f1923;border-radius:6px;padding:8px 4px 2px">
+<svg id=heap-svg viewBox="0 0 600 200" preserveAspectRatio="none" style="width:100%;height:200px;display:block"></svg>
+</div>
+<div style="display:flex;justify-content:space-between;font-size:.72em;color:#3a5070;padding:2px 6px 0"><span>~2m ago</span><span>~1m ago</span><span>now</span></div>
+</div>
+<div class=card>
+<h2>CPU Load <span style="font-size:.65em;color:#8f98a0;font-weight:400">&nbsp;last ~2 min &nbsp;<span style="display:inline-block;width:12px;height:3px;background:#ff6b6b;vertical-align:middle;margin-right:3px;border-radius:2px"></span>Core 0 &nbsp;<span style="display:inline-block;width:12px;height:3px;background:#ffd93d;vertical-align:middle;margin-right:3px;border-radius:2px"></span>Core 1</span></h2>
+<div style="background:#0f1923;border-radius:6px;padding:8px 4px 2px">
+<svg id=cpu-svg viewBox="0 0 600 150" preserveAspectRatio="none" style="width:100%;height:150px;display:block"></svg>
+</div>
+<div style="display:flex;justify-content:space-between;font-size:.72em;color:#3a5070;padding:2px 6px 0"><span>~2m ago</span><span>~1m ago</span><span>now</span></div>
+</div>
+</div>
+
+<!-- OTA -->
+<div id=ota class=page>
+ <div class=wb style="display: none;"><h3>WARNING</h3><ul>
+<li><strong>Do not power off</strong> during update</li>
+<li><strong>Ensure stable WiFi</strong> before starting</li>
+<li><strong>Do NOT remove SD card</strong> from CPAP during update</li>
+<li>Takes 1-2 minutes; device restarts automatically</li>
+</ul></div>
+<div class=cards>
+<div class=card style="display: none;"><h2>Method 1: File Upload</h2>
+<form id=f-up><div class=fg><label>Firmware file (.bin)</label>
+<input type=file id=f-bin name=firmware accept=.bin required></div>
+<button type=submit class="btn bp">Upload &amp; Install</button>
+<div id=s-up class=sm></div></form>
+</div>
+<div class=card style="display: none;"><h2>Method 2: URL Download</h2>
+<form id=f-url><div class=fg><label>Firmware URL</label>
+<input type=url id=f-u name=url placeholder="https://github.com/.../firmware.bin" required></div>
+<button type=submit class="btn bp">Download &amp; Install</button>
+<div id=s-url class=sm></div></form>
+</div>
+<div class=card><h2>System Actions</h2>
+<div class=actions>
+<button id=btn-srb class="btn bs" onclick=softReboot()>&#8635; Soft Reboot</button>
+</div>
+</div>
+</div>
+</div>
+
+<div id=toast class=toast></div>
+</div>
+
+<script>
+var cfg={},monPoll=null,logPoll=null,curTab='dash',monActive=false;
+var heapHistory=[],MAX_HEAP_HISTORY_MS=120000,HEAP_GAP_THRESHOLD_MS=6500,currentFsmState='',prevHelpHtml='';
+var _mtInstanceId=('00000000'+Math.floor(Math.random()*0x100000000).toString(16)).slice(-8).toUpperCase();
+var _mtBirthMs=Date.now();
+function _mkTabId(){
+  try{
+    var k='cpap-tab-id',v=sessionStorage.getItem(k);
+    if(v&&/^[0-9a-fA-F]{4}$/.test(v))return v.toUpperCase();
+    v=('0000'+Math.floor(Math.random()*65536).toString(16)).slice(-4).toUpperCase();
+    sessionStorage.setItem(k,v);
+    return v;
+  }catch(e){
+    return ('0000'+Math.floor(Math.random()*65536).toString(16)).slice(-4).toUpperCase();
+  }
+}
+function _setTabId(v){
+  _mtTabId=v;
+  try{sessionStorage.setItem('cpap-tab-id',v);}catch(e){}
+}
+function _newTabIdExcept(oldId){
+  var next=oldId;
+  while(next===oldId)next=('0000'+Math.floor(Math.random()*65536).toString(16)).slice(-4).toUpperCase();
+  return next;
+}
+function _apiUrl(path){return path+(path.indexOf('?')>=0?'&':'?')+'tid='+encodeURIComponent(_mtTabId)+'&iid='+encodeURIComponent(_mtInstanceId);}
+function _apiFetch(path,opts){
+  opts=opts||{};
+  var headers=opts.headers||{};
+  headers['X-Tab-Id']=_mtTabId;
+  headers['X-Tab-Instance']=_mtInstanceId;
+  opts.headers=headers;
+  if(!opts.cache)opts.cache='no-store';
+  if(typeof AbortController!=='undefined'&&!opts.signal){
+    var ac=new AbortController();
+    opts.signal=ac.signal;
+    setTimeout(function(){ac.abort();},5000);
+  }
+  return fetch(_apiUrl(path),opts);
+}
+function tab(t){
+  ['dash','logs','cfg','mon','mem','ota'].forEach(function(x){
+    document.getElementById(x).classList.toggle('on',x===t);
+    document.getElementById('t-'+x).classList.toggle('act',x===t);
+  });
+  curTab=t;
+  if(t==='logs'){
+    if(!backfillDone){
+      _tryBackfill();
+    }else{
+      fetchLogs();
+      if(!sseConnected){startSse();}
+    }
+  }else{
+    stopLogPoll();
+    stopSse();
+  }
+  if(t==='cfg'){loadCfg();}
+  if(t==='mon'){checkMonUploadState();syncMonBtn();}
+  if(t==='mem'){updateHeapChart();updateCpuChart();}
+  _updateMonBanner();
+}
+function toast(msg,mode){
+  var el=document.getElementById('toast');
+  var cls=mode===true||mode==='ok'?'ok':mode==='warn'?'warn':'er';
+  el.textContent=msg;el.className='toast on '+cls;
+  setTimeout(function(){el.className='toast';},4000);
+}
+function fmt(ms){var s=Math.round(ms/1000);if(s<60)return s+'s';if(s<3600)return Math.floor(s/60)+'m '+s%60+'s';return Math.floor(s/3600)+'h '+Math.floor(s%3600/60)+'m';}
+function fmtUp(s){if(s<60)return s+'s';if(s<3600)return Math.floor(s/60)+'m '+s%60+'s';var h=Math.floor(s/3600);return h+'h '+Math.floor(s%3600/60)+'m';}
+function fmtAgo(ts){if(!ts)return 'never';var s=Math.round(Date.now()/1000-ts);if(s<0)s=0;if(s<60)return 'just now';if(s<3600)return Math.floor(s/60)+' min ago';if(s<86400)return Math.floor(s/3600)+' h ago';var d=Math.floor(s/86400);return d+' day'+(d>1?'s':'')+' ago';}
+function sigClass(r){if(r>=-65)return 'sig-exc';if(r>=-75)return 'sig-good';if(r>=-85)return 'sig-fair';if(r>=-95)return 'sig-weak';return 'sig-vweak';}
+function sigLabel(r){if(r>=-65)return 'Excellent';if(r>=-75)return 'Good';if(r>=-85)return 'Fair';if(r>=-95)return 'Weak';return 'Very Weak';}
+function badgeHtml(st){var s=st.toLowerCase(),c='bi';
+  if(s==='listening')c='bl';else if(s==='acquiring'||s==='uploading')c='bu';
+  else if(s==='cooldown'||s==='releasing')c='bc';else if(s==='complete')c='bco';
+  else if(s==='monitoring')c='bm';
+  return '<span class="badge '+c+'">'+st+'</span>';
+}
+function set(id,html,inner){var el=document.getElementById(id);if(el){if(inner===false)el.innerHTML=html;else el.textContent=html;}}
+function escHtml(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function seti(id,html){set(id,html,false);}
+
+var statusFailCount=0,rebootExpected=false,lastStatusOkMs=0;
+function renderStatus(d){
+  lastStatusOkMs=Date.now();
+  statusFailCount=0;
+  document.getElementById('reboot-overlay').style.display='none';
+  rebootExpected=false;
+  var _prevSt=currentFsmState;
+  var _newSt=d.state||'';
+  currentFsmState=_newSt;
+  // Restore monitoring state from server FSM (fix for page refresh/navigation)
+  if(_newSt==='MONITORING' && !monActive){
+    monActive=true;
+    if(!monPoll)monPoll=setInterval(fetchMon,2000);
+    fetchMon();
+    syncMonBtn();
+    _updateMonBanner();
+  }
+  // Auto-trigger deferred backfill when upload finishes
+  var _wasBusy=(_prevSt==='UPLOADING'||_prevSt==='ACQUIRING');
+  var _nowBusy=(_newSt==='UPLOADING'||_newSt==='ACQUIRING');
+  if(_wasBusy&&!_nowBusy&&_backfillDeferred&&curTab==='logs'){
+    _backfillDeferred=false;backfillDone=false;
+    clientLogBuf=[];lastSeenLine='';
+    _tryBackfill();
+  }
+  seti('d-st',badgeHtml(currentFsmState||'?'));
+  var ins=d.in_state_sec||0;
+  if(ins<60){set('d-ins',ins+'s');}
+  else if(ins<3600){set('d-ins',Math.floor(ins/60)+'m '+ins%60+'s');}
+  else{var h=Math.floor(ins/3600),m=Math.floor((ins%3600)/60),s=ins%60;set('d-ins',h+'h '+m+'m '+s+'s');}
+  var mode=(cfg.upload_mode||'—').toUpperCase();
+  var pcntOk=d.pcnt_capable!==false;
+  var sciInvalid=d.smart_config_invalid===true;
+  cfg._pcntCapable=pcntOk;
+  if(sciInvalid&&mode==='SMART'){
+    seti('d-mode','SCHEDULED <span title="SMART_START_HOUR is inside the upload window \u2014 Smart mode config is invalid. Downgraded to Scheduled. Fix in Config." style="cursor:help;color:#ff6b6b;font-size:.85em">\u24d8</span>');
+  }else if(!pcntOk&&mode==='SCHEDULED'){
+    seti('d-mode',mode+' <span title="Smart mode requires 4-bit SD bus activity (not available on this CPAP). Using scheduled mode instead." style="cursor:help;color:#ffaa44;font-size:.85em">\u24d8</span>');
+  }else{set('d-mode',mode);}
+  set('d-tsync',d.time_synced?'Yes':'No');
+  var sh=cfg.upload_start_hour,eh=cfg.upload_end_hour,ssh=cfg.smart_start_hour;
+  var ws=(sh!=null&&eh!=null)?sh+':00 - '+eh+':00':'—';
+  var winAll=(sh!=null&&eh!=null&&sh===eh);
+  var winDisplay=ws;
+  if(mode==='SMART'&&ssh!=null&&!winAll){
+    winDisplay=ssh+':00 / '+ws;
+  }
+  if(mode==='MANUAL'){
+    set('d-win','—');
+  }else{
+    set('d-win',winAll?'24/7 (always open)':winDisplay);
+  }
+  set('d-inact',cfg.inactivity_seconds!=null?cfg.inactivity_seconds+'s':'—');
+  set('d-excl',cfg.exclusive_access_minutes!=null?cfg.exclusive_access_minutes+' min':'—');
+  set('d-cool',cfg.cooldown_minutes!=null?cfg.cooldown_minutes+' min':'—');
+  // Generate mode explanation helper — dynamic based on current state
+  var help='';
+  var iw=d.in_window;
+  var rd=cfg.recent_folder_days||2;
+  var cool=cfg.cooldown_minutes||10;
+  var maxd=cfg.max_days||365;
+  var mBadge='<span class="mode-badge">';
+  var mEnd='</span>';
+  var fBtn='<span style="color:#ffaa44">Force Upload</span> <span style="color:#aa7733;font-size:.9em">(not recommended)</span>';
+  var sq=d.smart_quiet;
+  var ssh=cfg.smart_start_hour;
+  var quietDisabled=(ssh!=null&&eh!=null&&ssh===eh);
+  if(sciInvalid&&mode==='SMART'){
+    help='<span style="color:#ff6b6b;font-weight:600">\u26a0 Scheduled mode \u2014 Smart config invalid</span><br>'
+      +'<b>SMART_START_HOUR ('+ssh+':00)</b> must be at least 1 hour before the upload window ('+ws+').<br>'
+      +'Smart mode is <b>disabled</b> until this is corrected.<br>'
+      +'<a href="/setup" style="color:#38bdf8">Fix in Config \u2192</a>';
+  }else if(mode==='SMART'){
+    if(sq&&!quietDisabled){
+      help=mBadge+'\u25b6 Smart mode \u2014 quiet period (no uploads)'+mEnd+'<br>'
+        +'No upload attempts until <b>'+ssh+':00</b>. Safe for therapy.<br>'
+        +fBtn+' \u2192 forces an upload of recent data now.';
+    }else if(winAll&&quietDisabled){
+      help=mBadge+'\u25b6 Smart mode \u2014 24/7 window'+mEnd+'<br>'
+        +'Uploads up to <b>'+maxd+' days</b> of data whenever CPAP is idle.<br>'
+        +fBtn+' \u2192 scans all eligible folders and uploads any new/changed files.';
+    }else if(iw){
+      help=mBadge+'\u25b6 Smart mode \u2014 currently inside upload window'+mEnd+' <span style="color:#66c0f4;font-size:.9em">('+ws+')</span><br>'
+        +'Uploads up to <b>'+maxd+' days</b> of data (recent + older backlog).<br>'
+        +fBtn+' \u2192 uploads all eligible data now.<br>'
+        +'<span style="color:#aaa">After the window closes at '+eh+':00, only the '+rd+' most recent day(s) will sync.</span>';
+    }else{
+      help=mBadge+'\u25b6 Smart mode \u2014 currently outside upload window'+mEnd+'<br>'
+        +'Only the <b>'+rd+' most recent day(s)</b> of data will be uploaded until <b>'+sh+':00</b>.<br>'
+        +'Older data (if any) will be uploaded during the regular window ('+ws+').<br>'
+        +fBtn+' \u2192 uploads recent data only.';
+    }
+  }else if(mode==='SCHEDULED'){
+    if(winAll){
+      help=mBadge+'\u25b6 Scheduled mode \u2014 24/7 window'+mEnd+'<br>'
+        +'Uploads up to <b>'+maxd+' days</b> of data whenever CPAP is idle.<br>'
+        +fBtn+' \u2192 scans all folders and uploads new/changed files.';
+    }else if(iw){
+      help=mBadge+'\u25b6 Scheduled mode \u2014 currently inside upload window'+mEnd+' <span style="color:#66c0f4;font-size:.9em">('+ws+')</span><br>'
+        +'Uploading up to <b>'+maxd+' days</b> of data until <b>'+eh+':00</b>.<br>'
+        +fBtn+' \u2192 uploads all eligible data now.';
+    }else{
+      help=mBadge+'\u25b6 Scheduled mode \u2014 currently outside upload window'+mEnd+'<br>'
+        +'No automatic uploads until <b>'+sh+':00</b>.<br>'
+        +fBtn+' \u2192 forces an upload of recent data now.<br>'
+        +'<span style="color:#aaa">Full upload resumes during the window ('+ws+').</span>';
+    }
+  }else if(mode==='MANUAL'){
+    var fBtnManual='<span style="color:#ffaa44">Force Upload</span>';
+    help=mBadge+'\u25b6 Manual mode'+mEnd+'<br>'
+      +'No automatic uploads will occur. The SD card is not accessed for routine checks.<br>'
+      +fBtnManual+' \u2192 triggers a full upload of all available data now.';
+  }
+  var helpEl=document.getElementById('d-mode-help');
+  if(helpEl){helpEl.style.display=help?'':'none';if(help!==prevHelpHtml){prevHelpHtml=help;helpEl.innerHTML=help;}}
+  var nx=d.next_upload;
+  set('d-next',nx<0?'—':nx===0?'Now':fmtUp(nx));
+  set('d-time',d.time||'—');
+  set('d-fh',d.free_heap?Math.round(d.free_heap/1024)+' KB':'—');
+  set('d-ma',d.max_alloc?Math.round(d.max_alloc/1024)+' KB':'—');
+  var tzOff=d.tz_offset_minutes;
+  if(tzOff!=null){
+    var sign=tzOff>=0?'+':'-';
+    var abs=Math.abs(tzOff);
+    var h=Math.floor(abs/60),m=abs%60;
+    var label='UTC'+sign+h+(m?':'+('0'+m).slice(-2):'');
+    // Show DST hint if live offset differs from the config's base offset by 60 min
+    var baseOff=(cfg.gmt_offset_hours||0)*60;
+    if(tzOff!==baseOff&&cfg.tz_string)label+=' (DST active)';
+    set('d-tz',label);
+  } else {
+    set('d-tz','—');
+  }
+  if(d.wifi){
+    var rc=sigClass(d.rssi),rl=sigLabel(d.rssi);
+    var pref=d.wifi_ssid?escHtml(d.wifi_ssid)+' &middot; ':'';
+    document.getElementById('d-wifi').innerHTML=pref+'<span class='+rc+'>'+rl+' ('+d.rssi+' dBm)</span>';
+  }else{set('d-wifi','Disconnected');}
+  set('d-ep',cfg.endpoint_type||d.endpoint_type||'—');
+  set('d-up',fmtUp(d.uptime||0));
+  var be=d.backends||{};
+  function renderBe(key,label){
+    var row=document.getElementById('d-be-'+key);
+    var b=be[key]||{};
+    if(!b.enabled){row.style.display='none';return{enabled:false,inc:0,done:0,last_ts:0};}
+    row.style.display='';
+    var done=b.done||0,total=b.total||0;
+    var live=b.live||{};
+    // Numbers now come from the work probe: `total` = folders within
+    // MAX_DAYS on the card (stable across both backends); `done` = folders
+    // in that window that are fully in sync for this backend.  The probe
+    // itself accounts for RECENT_FOLDER_DAYS (a refreshed folder with new
+    // content drops out of `done` automatically), so no client-side
+    // subtraction tricks are needed.  We still render fractional per-file
+    // progress during a live upload so the bar moves visibly.
+    var dispTotal=total,dispDone=done,frac=0;
+    if(live.active&&live.total>0){
+      frac=Math.min(1,Math.max(0,live.up/live.total));
+      dispDone=Math.min(total,done+frac);
+    }
+    var inc=Math.max(0,total-done);
+    var pct=dispTotal>0?Math.min(100,Math.round(dispDone*100/dispTotal)):0;
+    document.getElementById('d-pf-'+key).style.width=pct+'%';
+    var shownDone=live.active?Math.floor(dispDone):done;
+    var st;
+    if(dispTotal===0)st='<span style=color:#8f98a0>No data on card yet</span>';
+    else st=shownDone+' / '+dispTotal;
+    if(dispTotal>0&&live.active)st+=' &nbsp;<span style=color:#38bdf8>uploading</span>';
+    else if(dispTotal>0&&inc>0)st+=' &nbsp;<span style=color:#ffaa44>'+inc+' left</span>';
+    else if(dispTotal>0&&done>0)st+=' &nbsp;<span style=color:#44ff44>&#10003;</span>';
+    document.getElementById('d-'+key+'-st').innerHTML=st;
+    var det='';
+    if(live.active)det='Uploading '+live.up+'/'+live.total+(live.folder?' \u00b7 '+live.folder:'');
+    else if(b.last_ts>0)det='Last upload: '+fmtAgo(b.last_ts);
+    document.getElementById('d-'+key+'-det').innerHTML=det;
+    return{enabled:true,inc:inc,done:done,last_ts:b.last_ts||0};
+  }
+  var rCloud=renderBe('cloud','SleepHQ Cloud');
+  var rSmb=renderBe('smb','NAS (SMB)');
+  var anyEnabled=rCloud.enabled||rSmb.enabled;
+  var anyInc=rCloud.inc>0||rSmb.inc>0;
+  var totalFolders=(d.backends.cloud&&d.backends.cloud.total)||(d.backends.smb&&d.backends.smb.total)||0;
+  var fst;
+  if(!anyEnabled)fst='No backend configured';
+  else if(anyInc){
+    var parts=[];
+    if(rCloud.inc>0)parts.push(rCloud.inc+' on cloud');
+    if(rSmb.inc>0)parts.push(rSmb.inc+' on NAS');
+    fst='&#9888; '+parts.join(', ')+' pending';
+  }else if(!d.has_probed)fst='Waiting for first scan';
+  else if(totalFolders===0)fst='&#10003; No data on card';
+  else fst='&#10003; Up to date';
+  seti('d-fst',fst);
+  document.title=d.hostname+' \u200e- CPAP Uploader';
+  set('sub','Firmware '+d.firmware+' \u00b7 '+d.hostname+' \u00b7 '+fmtUp(d.uptime||0)+' uptime');
+  checkMonUploadState();
+  var fhV=d.free_heap||0,maV=d.max_alloc||0;
+  var fh=fhV?Math.round(fhV/1024)+' KB':'\u2014';
+  var ma=maV?Math.round(maV/1024)+' KB':'\u2014';
+  set('d-fh',fh);set('d-ma',ma);
+  set('hd-fh',fh);set('hd-ma',ma);
+  var now=Date.now(),cutoff=now-MAX_HEAP_HISTORY_MS;
+  if(fhV){heapHistory.push({fh:fhV,ma:maV,ts:now});while(heapHistory.length&&heapHistory[0].ts<cutoff)heapHistory.shift();}
+  var c0=d.cpu0||0,c1=d.cpu1||0;
+  set('hd-c0',c0+'%');set('hd-c1',c1+'%');
+  cpuHistory.push({c0:c0,c1:c1,ts:now});while(cpuHistory.length&&cpuHistory[0].ts<cutoff)cpuHistory.shift();
+  if(curTab==='mem'){updateHeapChart();updateCpuChart();}
+  var pb=document.getElementById('cfg-pcnt-banner');
+  if(pb)pb.style.display=pcntOk?'none':'block';
+  var bb=document.getElementById('brownout-banner');
+  if(bb)bb.style.display=(cfg.brownout_detect_mode==='OFF')?'block':'none';
+  _mtSyncServerTabs(d.recent_tabs);
+}
+
+var statusTimer=null;
+function pollStatus(){
+  _apiFetch('/api/status').then(function(r){return r.json();}).then(function(d){
+    renderStatus(d);
+  }).catch(function(){
+    statusFailCount++;
+    if(statusFailCount>=3||rebootExpected){
+      document.getElementById('reboot-overlay').style.display='block';
+      seti('d-st','<span class="badge bc">RECONNECTING</span>');
+    } else {
+      seti('d-st','<span class="badge bc">OFFLINE</span>');
+    }
+  });
+}
+function _statusPollMs(){return _mtDup?15000:3000;}
+function _restartStatusPoll(){if(statusTimer){clearInterval(statusTimer);statusTimer=setInterval(pollStatus,_statusPollMs());}}
+function startStatusPoll(){if(!statusTimer){pollStatus();statusTimer=setInterval(pollStatus,_statusPollMs());}}
+document.addEventListener('visibilitychange',function(){
+  if(!document.hidden){
+    statusFailCount=0;
+    document.getElementById('reboot-overlay').style.display='none';
+    pollStatus();
+    _restartStatusPoll();
+  }
+});
+
+var cpuHistory=[];
+function tsToX(ts,tMin,tMax,W){return tMin===tMax?W/2:((ts-tMin)/(tMax-tMin))*(W-2)+1;}
+function updateHeapChart(){
+  var svg=document.getElementById('heap-svg');
+  if(!svg||heapHistory.length<2)return;
+  var W=600,H=200,now=Date.now();
+  var tMin=now-MAX_HEAP_HISTORY_MS,tMax=now;
+  var maxVal=0;
+  heapHistory.forEach(function(s){if(s.fh>maxVal)maxVal=s.fh;});
+  if(maxVal<65536)maxVal=65536;
+  var ptsFh='',ptsMa='';
+  heapHistory.forEach(function(s,i){
+    var x=tsToX(s.ts,tMin,tMax,W).toFixed(1);
+    var yFh=(H-(s.fh/maxVal)*(H-14)-6).toFixed(1);
+    var yMa=(H-(s.ma/maxVal)*(H-14)-6).toFixed(1);
+    var gap=i>0&&(s.ts-heapHistory[i-1].ts)>HEAP_GAP_THRESHOLD_MS;
+    ptsFh+=(i===0||gap?'M':'L')+x+' '+yFh;
+    ptsMa+=(i===0||gap?'M':'L')+x+' '+yMa;
+  });
+  var grid='';
+  [0.25,0.5,0.75].forEach(function(f){
+    var y=(H-f*(H-14)-6).toFixed(0);
+    var kb=Math.round(maxVal*f/1024);
+    grid+='<line x1="0" y1="'+y+'" x2="'+W+'" y2="'+y+'" stroke="#1a2a3a" stroke-width="1"/>';
+    grid+='<text x="4" y="'+(parseInt(y)-2)+'" fill="#3a5070" font-size="9" font-family="monospace">'+kb+'K</text>';
+  });
+  svg.innerHTML=grid
+    +'<path d="'+ptsFh+'" stroke="#5c9ade" stroke-width="1.5" fill="none"/>'
+    +'<path d="'+ptsMa+'" stroke="#aa66ff" stroke-width="1.5" fill="none"/>';
+  if(heapHistory.length>0){
+    var minFh=heapHistory.reduce(function(m,s){return s.fh<m?s.fh:m;},heapHistory[0].fh);
+    var minMa=heapHistory.reduce(function(m,s){return s.ma<m?s.ma:m;},heapHistory[0].ma);
+    set('hd-fh-min',Math.round(minFh/1024)+' KB');
+    set('hd-ma-min',Math.round(minMa/1024)+' KB');
+  }
+}
+function updateCpuChart(){
+  var svg=document.getElementById('cpu-svg');
+  if(!svg||cpuHistory.length<2)return;
+  var W=600,H=150,now=Date.now();
+  var tMin=now-MAX_HEAP_HISTORY_MS,tMax=now;
+  var ptsC0='',ptsC1='';
+  cpuHistory.forEach(function(s,i){
+    var x=tsToX(s.ts,tMin,tMax,W).toFixed(1);
+    var y0=(H-(s.c0/100)*(H-14)-6).toFixed(1);
+    var y1=(H-(s.c1/100)*(H-14)-6).toFixed(1);
+    var gap=i>0&&(s.ts-cpuHistory[i-1].ts)>HEAP_GAP_THRESHOLD_MS;
+    ptsC0+=(i===0||gap?'M':'L')+x+' '+y0;
+    ptsC1+=(i===0||gap?'M':'L')+x+' '+y1;
+  });
+  var grid='';
+  [25,50,75].forEach(function(pct){
+    var y=(H-(pct/100)*(H-14)-6).toFixed(0);
+    grid+='<line x1="0" y1="'+y+'" x2="'+W+'" y2="'+y+'" stroke="#1a2a3a" stroke-width="1"/>';
+    grid+='<text x="4" y="'+(parseInt(y)-2)+'" fill="#3a5070" font-size="9" font-family="monospace">'+pct+'%</text>';
+  });
+  svg.innerHTML=grid
+    +'<path d="'+ptsC0+'" stroke="#ff6b6b" stroke-width="1.5" fill="none"/>'
+    +'<path d="'+ptsC1+'" stroke="#ffd93d" stroke-width="1.5" fill="none"/>';
+}
+function syncMonBtn(){
+  var busy=currentFsmState==='UPLOADING'||currentFsmState==='ACQUIRING';
+  var btnSt=document.getElementById('btn-mst');
+  var btnSp=document.getElementById('btn-msp');
+  if(!btnSt||!btnSp)return;
+  if(monActive){
+    btnSt.style.display='none';
+    btnSp.style.display='inline-flex';
+  }else if(busy){
+    btnSt.style.display='inline-flex';
+    btnSp.style.display='none';
+    btnSt.disabled=true;
+    btnSt.style.opacity='.4';
+    btnSt.style.cursor='not-allowed';
+    btnSt.textContent='Start Monitoring';
+  }else{
+    btnSt.style.display='inline-flex';
+    btnSp.style.display='none';
+    btnSt.disabled=false;
+    btnSt.style.opacity='1';
+    btnSt.style.cursor='pointer';
+    btnSt.textContent='Start Monitoring';
+  }
+}
+function checkMonUploadState(){
+  var busy=currentFsmState==='UPLOADING'||currentFsmState==='ACQUIRING';
+  var w=document.getElementById('mon-upwarn');
+  if(w)w.style.display=busy?'':'none';
+  syncMonBtn();
+}
+
+function loadCfg(){
+  fetch('/api/config',{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
+    cfg=d;
+  }).catch(function(){});
+}
+
+// Client-side log buffer — persists across soft-reboots in browser memory
+var logAtBottom=true,clientLogBuf=[],lastSeenLine='',LOG_BUF_MAX=2000,newBootDetected=false;
+function _appendLogs(text){
+  if(!text)return;
+  newBootDetected=false;
+  var lines=text.split('\n');
+  // Detect reboot: find the LAST boot banner so that when /api/logs/full
+  // contains old syslog content with ancient banners, we use the most recent one.
+  var bootIdx=-1;
+  for(var i=lines.length-1;i>=0;i--){
+    if(lines[i].indexOf('=== CPAP Data Auto-Uploader ===')>=0){bootIdx=i;break;}
+  }
+  var newLines;
+  if(bootIdx>=0){
+    // Boot banner found. Determine if this is genuinely a NEW reboot or the
+    // same boot we already buffered (banner is present in every server response).
+    // A new reboot means lastSeenLine doesn't exist in this response at all, OR
+    // it appears before/at the boot banner (i.e. it belongs to a prior boot).
+    var lastSeenPos=-1;
+    if(lastSeenLine){
+      for(var i=lines.length-1;i>=0;i--){
+        if(lines[i]===lastSeenLine){lastSeenPos=i;break;}
+      }
+    }
+    if(lastSeenPos>bootIdx){
+      // Same boot continuing — treat as normal poll, append only new tail
+      newLines=lines.slice(lastSeenPos+1);
+    } else if(clientLogBuf.length===0){
+      // Fresh start (initial page load or post-reboot buffer clear).
+      // Include ALL lines so full NAND history + pre-reboot context is shown.
+      var startFrom=0;
+      while(startFrom<lines.length&&!lines[startFrom].trim())startFrom++;
+      newLines=lines.slice(startFrom);
+    } else {
+      // Genuinely new reboot detected. Signal newBootDetected so fetchLogs()
+      // clears the buffer and triggers a full /api/logs/full backfill.
+      // The server provides correctly-ordered multi-boot history including
+      // pre-reboot context from NAND syslog — no client-side stitching needed.
+      newBootDetected=true;
+      return;
+    }
+  } else {
+    // No boot banner in response. Two sub-cases:
+    // (a) Same boot, buffer hasn't wrapped — lastSeenLine IS found → normal dedup
+    // (b) Reboot happened, buffer wrapped, boot banner overwritten — lastSeenLine NOT found
+    var startFrom=0;
+    var lastSeenFound=false;
+    if(lastSeenLine){
+      for(var i=lines.length-1;i>=0;i--){
+        if(lines[i]===lastSeenLine){startFrom=i+1;lastSeenFound=true;break;}
+      }
+    }
+    if(lastSeenLine&&!lastSeenFound){
+      // lastSeenLine not found and no boot banner — likely a reboot where the
+      // 12KB circular buffer wrapped (boot banner overwritten by later boot logs).
+      // Signal newBootDetected so fetchLogs triggers a /api/logs/full backfill
+      // which has the complete NAND history including pre-reboot context.
+      newBootDetected=true;
+    }
+    newLines=lines.slice(startFrom);
+  }
+  // Strip trailing empty lines — server responses end with blank lines that
+  // would otherwise be appended as "new" on every poll.
+  while(newLines.length>0&&!newLines[newLines.length-1].trim())newLines.pop();
+  for(var i=0;i<newLines.length;i++){
+    if(newLines[i]!==undefined)clientLogBuf.push(newLines[i]);
+  }
+  // Track the last non-empty line we put into the buffer for next dedup pass
+  for(var i=clientLogBuf.length-1;i>=0;i--){
+    if(clientLogBuf[i]){lastSeenLine=clientLogBuf[i];break;}
+  }
+  if(clientLogBuf.length>LOG_BUF_MAX)clientLogBuf=clientLogBuf.slice(clientLogBuf.length-LOG_BUF_MAX);
+}
+function _renderLogBuf(){
+  var b=document.getElementById('log-box');
+  logAtBottom=(b.scrollHeight-b.scrollTop-b.clientHeight)<60;
+  b.textContent=clientLogBuf.join('\n');
+  if(logAtBottom)b.scrollTop=b.scrollHeight;
+}
+var sseSource=null,sseConnected=false,backfillDone=false,backfillRetries=0,sseReconnAttempts=0;
+var _backfillDeferred=false; // true when backfill was skipped due to upload/multi-tab
+function _isUploadBusy(){return currentFsmState==='UPLOADING'||currentFsmState==='ACQUIRING';}
+// Tier 2+3 gating: skip heavy /api/logs/full during upload or multi-tab contention
+function _tryBackfill(){
+  if(_mtThrottled){
+    // Tier 3: multi-tab detected — refuse backfill entirely
+    set('log-st','Close other tabs to load full log history');
+    _backfillDeferred=true;
+    backfillDone=true; // mark done so tab() falls through to polling/SSE
+    fetchLogs();
+    startLogPoll();
+    return;
+  }
+  if(_isUploadBusy()){
+    // Tier 2: upload active — skip NAND backfill, use circular buffer + SSE
+    set('log-st','Upload active — showing live logs only');
+    _backfillDeferred=true;
+    backfillDone=true;
+    fetchLogs();
+    startSse();
+    return;
+  }
+  _backfillDeferred=false;
+  fetchBackfill();
+}
+function fetchLogs(){
+  if(curTab!=='logs')return;
+  if(_mtThrottled&&document.hidden)return;
+  _apiFetch('/api/logs/poll').then(function(r){return r.text();}).then(function(t){
+    _appendLogs(t);
+    _renderLogBuf();
+    // If polling detected a new boot (boot banner found, or lastSeenLine vanished
+    // because buffer wrapped), re-fetch /api/logs/full to get NAND pre-reboot
+    // context (reboot reason, state reset trigger, early boot lines).
+    if(newBootDetected&&backfillDone){
+      backfillDone=false;
+      stopLogPoll();
+      // Clear buffer so backfill rebuilds from scratch with full NAND context
+      clientLogBuf=[];lastSeenLine='';
+      _tryBackfill();
+      return;
+    }
+    set('log-st',(sseConnected?'SSE Live':'Polling')+' \u2022 '+clientLogBuf.length+' lines');
+  }).catch(function(){set('log-st','Disconnected');});
+}
+function fetchBackfill(){
+  seti('log-st','<span class="log-spinner"></span>Loading history…');
+  _apiFetch('/api/logs/recent').then(function(r){
+    // Use streaming to show progressive loading feedback
+    var reader=r.body?r.body.getReader():null;
+    if(!reader) return r.text();
+    var chunks=[],totalBytes=0,decoder=new TextDecoder();
+    function pump(){
+      return reader.read().then(function(result){
+        if(result.done){return chunks.join('');}
+        var chunk=decoder.decode(result.value,{stream:true});
+        chunks.push(chunk);
+        totalBytes+=result.value.length;
+        var lines=0;for(var i=0;i<chunk.length;i++){if(chunk.charCodeAt(i)===10)lines++;}
+        seti('log-st','<span class="log-spinner"></span>Loading… '+(totalBytes/1024).toFixed(0)+' KB received');
+        return pump();
+      });
+    }
+    return pump();
+  }).then(function(t){
+    _appendLogs(t);
+    _renderLogBuf();
+    backfillDone=true;
+    backfillRetries=0;
+    set('log-st','Loaded • '+clientLogBuf.length+' lines');
+    startSse();
+  }).catch(function(){
+    // Device might still be rebooting — retry with exponential backoff
+    backfillRetries++;
+    if(backfillRetries<6){
+      var delay=Math.min(3000*backfillRetries,15000);
+      set('log-st','Device offline — retry '+backfillRetries+'/5 in '+(delay/1000)+'s…');
+      setTimeout(function(){if(curTab==='logs'){fetchBackfill();}},delay);
+    } else {
+      backfillDone=true;
+      backfillRetries=0;
+      startLogPoll();
+    }
+  });
+}
+function startSse(){
+  if(sseSource)return;
+  if(_mtThrottled){startLogPoll();return;}
+  if(typeof EventSource==='undefined'){startLogPoll();return;}
+  sseSource=new EventSource(_apiUrl('/api/logs/stream'));
+  sseSource.onopen=function(){
+    sseConnected=true;
+    sseReconnAttempts=0;
+    stopLogPoll();
+    set('log-st','SSE Live • '+clientLogBuf.length+' lines');
+  };
+  sseSource.onmessage=function(e){
+    if(!e.data)return;
+    _appendLogs(e.data+'\n');
+    _renderLogBuf();
+    set('log-st','SSE Live \u2022 '+clientLogBuf.length+' lines');
+  };
+  sseSource.onerror=function(){
+    sseConnected=false;
+    if(sseSource){sseSource.close();sseSource=null;}
+    sseReconnAttempts++;
+    if(sseReconnAttempts<=3){
+      var delay=Math.min(2000*sseReconnAttempts,6000);
+      set('log-st','SSE lost — retry '+sseReconnAttempts+'/3 in '+(delay/1000)+'s…');
+      setTimeout(function(){if(curTab==='logs'){startSse();}},delay);
+    } else {
+      sseReconnAttempts=0;
+      set('log-st','SSE unavailable — falling back to polling');
+      startLogPoll();
+    }
+  };
+}
+function stopSse(){
+  if(sseSource){sseSource.close();sseSource=null;sseConnected=false;}
+}
+function clearLogBuf(){clientLogBuf=[];lastSeenLine='';document.getElementById('log-box').textContent='';}
+function downloadSavedLogs(){
+  var a=document.createElement('a');
+  a.href=_apiUrl('/api/logs/download-all');
+  a.download='cpap_logs.txt';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+}
+function copyLogBuf(){
+  var txt=clientLogBuf.join('\n');
+  if(!txt){return;}
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(function(){set('log-st','Copied! \u2022 '+clientLogBuf.length+' lines');setTimeout(function(){set('log-st',(sseConnected?'SSE Live':'Polling')+' \u2022 '+clientLogBuf.length+' lines buffered');},2000);});
+  } else {
+    var ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+    set('log-st','Copied! \u2022 '+clientLogBuf.length+' lines');setTimeout(function(){set('log-st',(sseConnected?'SSE Live':'Polling')+' \u2022 '+clientLogBuf.length+' lines buffered');},2000);
+  }
+}
+document.getElementById('log-box').addEventListener('scroll',function(){
+  var b=this;logAtBottom=(b.scrollHeight-b.scrollTop-b.clientHeight)<60;
+});
+function _logPollMs(){return _mtDup?15000:3000;}
+function startLogPoll(){if(logPoll){clearInterval(logPoll);logPoll=null;}if(curTab!=='logs')return;fetchLogs();logPoll=setInterval(fetchLogs,_logPollMs());}
+function stopLogPoll(){if(logPoll){clearInterval(logPoll);logPoll=null;}}
+
+function startMon(){
+  var busy=currentFsmState==='UPLOADING'||currentFsmState==='ACQUIRING';
+  if(busy){toast('Cannot start monitoring while upload is in progress.','warn');return;}
+  monActive=true;
+  fetch('/api/monitor-start',{cache:'no-store'});
+  document.getElementById('btn-mst').style.display='none';
+  document.getElementById('btn-msp').style.display='inline-flex';
+  if(!monPoll)monPoll=setInterval(fetchMon,2000);
+  fetchMon();
+  _updateMonBanner();
+}
+function stopMon(){
+  if(monActive){
+    monActive=false;
+    fetch('/api/monitor-stop',{cache:'no-store'});
+  }
+  document.getElementById('btn-mst').style.display='inline-flex';
+  document.getElementById('btn-msp').style.display='none';
+  if(monPoll){clearInterval(monPoll);monPoll=null;}
+  _updateMonBanner();
+}
+function _updateMonBanner(){
+  var b=document.getElementById('mon-active-banner');
+  if(b)b.style.display=(monActive&&curTab!=='mon')?'block':'none';
+}
+function fetchMon(){
+  fetch('/api/sd-activity',{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
+    set('m-p',d.last_pulse_count);
+    set('m-i',(d.consecutive_idle_ms/1000).toFixed(1)+'s');
+    set('m-l',(d.longest_idle_ms/1000).toFixed(1)+'s');
+    set('m-r',d.total_active_samples+'/'+d.total_idle_samples);
+    var dot=document.getElementById('mon-dot');
+    if(dot)dot.className='dot '+(d.is_busy?'busy':'idle');
+    if(d.samples&&d.samples.length){
+      monHistory=[];
+      d.samples.forEach(function(s){
+        monHistory.push({p:s.p});
+      });
+      while(monHistory.length>MON_HIST_MAX)monHistory.shift();
+      updateMonChart();
+      var last=d.samples[d.samples.length-1];
+      if(last){
+        var now=new Date();
+        var ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+        var idleS=(d.consecutive_idle_ms/1000).toFixed(1);
+        var sinceStr='—';
+        if(last.a&&monLogLastWriteTs>0){
+          var gap=Math.round((Date.now()-monLogLastWriteTs)/1000);
+          sinceStr=gap+'s ago';
+        }
+        if(last.a)monLogLastWriteTs=Date.now();
+        var shouldLog=true;
+        if(monLog.length>0){
+          var prev=monLog[monLog.length-1];
+          if(prev.rawP===last.p&&prev.rawP===0)shouldLog=false;
+        }
+        if(shouldLog){
+          monLog.push({ts:ts,p:last.p,idle:idleS+'s',since:sinceStr,rawP:last.p});
+          if(monLog.length>MON_LOG_MAX)monLog.shift();
+          var cutoff=Date.now()-24*3600*1000;
+          while(monLog.length>0&&monLog[0].epoch&&monLog[0].epoch<cutoff)monLog.shift();
+          renderMonLog();
+        }
+      }
+    }
+    if(profActive){
+      var li=d.longest_idle_ms/1000;
+      if(li>profMaxIdle)profMaxIdle=li;
+      document.getElementById('prof-max-idle').textContent=profMaxIdle.toFixed(1)+'s';
+      if(profMaxIdle>0){
+        document.getElementById('prof-rec-box').style.display='block';
+        document.getElementById('prof-rec-val').textContent=Math.ceil(profMaxIdle+4)+'';
+      }
+    }
+  }).catch(function(){});
+}
+
+var monHistory=[],MON_HIST_MAX=120,monLog=[],MON_LOG_MAX=2000,monLogLastWriteTs=0;
+function updateMonChart(){
+  var svg=document.getElementById('mon-svg');
+  if(!svg||monHistory.length<2)return;
+  var W=600,H=120,n=monHistory.length;
+  var maxP=1;
+  monHistory.forEach(function(s){if(s.p>maxP)maxP=s.p;});
+  maxP=Math.max(maxP,10);
+  var pts='';
+  monHistory.forEach(function(s,i){
+    var x=((W-2)*i/(MON_HIST_MAX-1)+1).toFixed(1);
+    var y=(H-(s.p/maxP)*(H-14)-6).toFixed(1);
+    pts+=(i===0?'M':'L')+x+' '+y;
+  });
+  var fill=pts+'L'+((W-2)*(n-1)/(MON_HIST_MAX-1)+1).toFixed(1)+' '+(H-6)+'L1 '+(H-6)+'Z';
+  var grid='';
+  [0.25,0.5,0.75].forEach(function(f){
+    var y=(H-f*(H-14)-6).toFixed(0);
+    var v=Math.round(maxP*f);
+    grid+='<line x1="0" y1="'+y+'" x2="'+W+'" y2="'+y+'" stroke="#1a2a3a" stroke-width="1"/>';
+    grid+='<text x="4" y="'+(parseInt(y)-2)+'" fill="#3a5070" font-size="9" font-family="monospace">'+v+'</text>';
+  });
+  svg.innerHTML=grid
+    +'<path d="'+fill+'" fill="rgba(255,68,68,0.15)" stroke="none"/>'
+    +'<path d="'+pts+'" stroke="#ff4444" stroke-width="1.5" fill="none"/>';
+}
+function renderMonLog(){
+  var body=document.getElementById('mon-log-body');
+  if(!body||monLog.length===0)return;
+  var h='';var show=Math.min(monLog.length,200);
+  for(var i=monLog.length-1;i>=Math.max(0,monLog.length-show);i--){
+    var e=monLog[i];
+    var pc=e.p>0?'color:#ff6b6b':'color:#44ff44';
+    h+='<tr style="border-bottom:1px solid #1a2a3a"><td style="padding:3px 8px;color:#8f98a0">'+e.ts+'</td><td style="padding:3px 8px;'+pc+'">'+e.p+'</td><td style="padding:3px 8px;color:#c7d5e0">'+e.idle+'</td><td style="padding:3px 8px;color:#8f98a0">'+e.since+'</td></tr>';
+  }
+  body.innerHTML=h;
+}
+var profActive=false,profMaxIdle=0;
+function openProfilerWizard(){
+  document.getElementById('prof-wiz').style.display='flex';
+}
+function startProfiler(){
+  if(profActive){
+    profActive=false;
+    document.getElementById('btn-prof-start').textContent='Start Profiling';
+    document.getElementById('btn-prof-start').style.background='#aa66ff';
+    return;
+  }
+  profActive=true;profMaxIdle=0;
+  document.getElementById('prof-max-idle').textContent='0.0s';
+  document.getElementById('prof-rec-box').style.display='none';
+  document.getElementById('btn-prof-start').textContent='Stop Profiling';
+  document.getElementById('btn-prof-start').style.background='#e04030';
+  startMon();
+}
+
+function triggerUpload(){
+  var b=document.getElementById('btn-up');
+  if(b._busy)return;b._busy=1;b.textContent='Triggering...';
+  fetch('/trigger-upload',{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
+    var mode=d.status==='success'?'ok':d.status==='scheduled'?'warn':'er';
+    toast(d.message||'Upload triggered.',mode);
+  }).catch(function(){toast('Failed to trigger upload.','er');
+  }).finally(function(){setTimeout(function(){b._busy=0;b.innerHTML='<span class=ic>&#9650;</span> Force Upload';},700);});
+}
+function softReboot(){
+  var b=document.getElementById('btn-srb');
+  if(b._busy)return;b._busy=1;b.textContent='Rebooting...';rebootExpected=true;
+  fetch('/soft-reboot',{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
+    toast(d.message||'Rebooting...',true);
+  }).catch(function(){toast('Failed to reboot.',false);
+  }).finally(function(){setTimeout(function(){b._busy=0;b.innerHTML='&#8635; Soft Reboot';},4000);});
+}
+function resetState(){
+  if(!confirm('Reset all upload state? This cannot be undone.'))return;
+  var b=document.getElementById('btn-rst');
+  if(b._busy)return;b._busy=1;b.textContent='Resetting...';rebootExpected=true;
+  fetch('/reset-state',{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
+    toast(d.message||'State reset.',true);
+  }).catch(function(){toast('Failed to reset state.',false);
+  }).finally(function(){setTimeout(function(){b._busy=0;b.innerHTML='<span class=ic>&#9762;</span> Reset State';},1000);});
+}
+
+var otaBusy=false;
+function setMsg(id,cls,msg){var e=document.getElementById(id);if(e){e.className='sm '+cls;e.textContent=msg;}}
+document.getElementById('f-up').addEventListener('submit',function(e){
+  e.preventDefault();if(otaBusy)return;
+  var f=document.getElementById('f-bin').files[0];if(!f){alert('Select a file');return;}
+  otaBusy=true;setMsg('s-up','info','Uploading 0%...');
+  var fd=new FormData();fd.append('firmware',f);
+  var x=new XMLHttpRequest();
+  x.upload.addEventListener('progress',function(ev){if(ev.lengthComputable)setMsg('s-up','info','Uploading '+Math.round(ev.loaded/ev.total*100)+'%...');});
+  x.addEventListener('load',function(){try{handleOtaResult(JSON.parse(x.responseText),'s-up');}catch(er){otaBusy=false;setMsg('s-up','er','Invalid response');}});
+  x.addEventListener('error',function(){otaBusy=false;setMsg('s-up','er','Network error');});
+  x.open('POST','/ota-upload');x.send(fd);
+});
+document.getElementById('f-url').addEventListener('submit',function(e){
+  e.preventDefault();if(otaBusy)return;
+  var u=document.getElementById('f-u').value;if(!u)return;
+  otaBusy=true;setMsg('s-url','info','Downloading (may take ~1 min)...');
+  var fd=new FormData();fd.append('url',u);
+  fetch('/ota-url',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){handleOtaResult(d,'s-url');}).catch(function(){otaBusy=false;setMsg('s-url','er','Network error');});
+});
+function handleOtaResult(d,sid){
+  otaBusy=false;
+  if(d.success){setMsg(sid,'ok','Success! '+d.message);var t=30;var iv=setInterval(function(){t--;setMsg(sid,'ok','Redirecting in '+t+'s...');if(t<=0){clearInterval(iv);location.href='/';}},1000);}
+  else setMsg(sid,'er','Failed: '+d.message);
+ }
+ 
+ // ── Multi-tab/browser/device detection ──
+ var _mtDup=false,_mtTabId=_mkTabId();
+ var _mtChan=null,_mtThrottled=false,_mtPeers={},_mtServerDup=false;
+ function _mtAddPeer(msg){
+   if(!msg||!msg.iid||msg.iid===_mtInstanceId)return;
+   if((msg.tid||'').toUpperCase()===_mtTabId)return;
+   _mtPeers[msg.iid]={ts:Date.now(),tid:(msg.tid||'').toUpperCase(),born:msg.born||0};
+ }
+ function _mtDropPeer(iid){if(iid&&_mtPeers[iid])delete _mtPeers[iid];}
+ function _mtHasPeer(){
+   var now=Date.now();
+   for(var id in _mtPeers){if((now-_mtPeers[id].ts)>20000)delete _mtPeers[id];}
+   for(var k in _mtPeers){return true;}
+   return false;
+ }
+ function _mtBroadcast(type,extra){
+   if(!_mtChan)return;
+   var msg={type:type,iid:_mtInstanceId,tid:_mtTabId,born:_mtBirthMs};
+   if(extra)for(var k in extra)msg[k]=extra[k];
+   _mtChan.postMessage(msg);
+ }
+ function _mtMaybeRekey(msg){
+   if(!msg||!msg.iid||msg.iid===_mtInstanceId)return false;
+   var peerTid=(msg.tid||'').toUpperCase();
+   if(!peerTid||peerTid!==_mtTabId)return false;
+   var peerBorn=Number(msg.born)||0;
+   var shouldRekey=(peerBorn>0&&(_mtBirthMs>peerBorn||(_mtBirthMs===peerBorn&&_mtInstanceId>msg.iid)));
+   if(!shouldRekey)return false;
+   var oldTid=_mtTabId;
+   _setTabId(_newTabIdExcept(oldTid));
+   _mtServerDup=false;
+   if(curTab==='logs'){
+     stopSse();
+     stopLogPoll();
+     if(_mtThrottled)startLogPoll();
+     else if(backfillDone)startSse();
+   }
+   _mtBroadcast('rekey',{from:oldTid});
+   return true;
+ }
+ function _mtApplyDupState(){_mtSetDup(_mtHasPeer()||_mtServerDup);}
+ function _mtSyncServerTabs(raw){
+   _mtServerDup=false;
+   if(typeof raw==='string'&&raw){
+     raw.split(',').forEach(function(entry){
+       var parts=entry.split(':');
+       if(parts.length<2)return;
+       var id=(parts[0]||'').toUpperCase();
+       var age=parseInt(parts[1],10);
+       if(id&&id!==_mtTabId&&!isNaN(age)&&age<=20)_mtServerDup=true;
+     });
+   }
+   _mtApplyDupState();
+ }
+ function _mtSetDup(v){
+   if(_mtDup===v)return;_mtDup=v;
+   var b=document.getElementById('multitab-banner');if(b)b.style.display=v?'block':'none';
+   if(v&&!_mtThrottled){
+     _mtThrottled=true;
+     _restartStatusPoll();
+     stopSse();
+     if(curTab==='logs')startLogPoll();
+     toast('Multiple tabs/browsers detected — polling throttled','warn');
+   } else if(!v&&_mtThrottled){
+     _mtThrottled=false;
+     _restartStatusPoll();
+     if(curTab==='logs'){
+       stopLogPoll();
+       if(_backfillDeferred){
+         _backfillDeferred=false;backfillDone=false;
+         clientLogBuf=[];lastSeenLine='';
+         _tryBackfill();
+        } else {
+          startSse();
+        }
+      }
+      toast('Other tabs/browsers closed — resuming normal operation','ok');
+    }
+  }
+  // Layer 1: BroadcastChannel — same-browser, cross-tab
+  var _mtBcPongTimer=null;
+  if(typeof BroadcastChannel!=='undefined'){
+    _mtChan=new BroadcastChannel('cpap-uploader-tab');
+    _mtChan.onmessage=function(e){
+      if(!e.data)return;
+      if(e.data.type==='ping'&&e.data.iid!==_mtInstanceId){
+        _mtAddPeer(e.data);
+        _mtMaybeRekey(e.data);
+        _mtApplyDupState();
+        _mtBroadcast('pong');
+      }
+      if(e.data.type==='pong'&&e.data.iid!==_mtInstanceId){
+        _mtAddPeer(e.data);
+        _mtMaybeRekey(e.data);
+        _mtApplyDupState();
+        if(_mtBcPongTimer){clearTimeout(_mtBcPongTimer);_mtBcPongTimer=null;}
+      }
+      if(e.data.type==='rekey'&&e.data.iid!==_mtInstanceId){
+        _mtAddPeer(e.data);
+        _mtApplyDupState();
+      }
+      if(e.data.type==='close'&&e.data.iid!==_mtInstanceId){
+        _mtDropPeer(e.data.iid);
+        _mtBroadcast('ping');
+        if(_mtBcPongTimer)clearTimeout(_mtBcPongTimer);
+        _mtBcPongTimer=setTimeout(function(){
+          _mtBcPongTimer=null;
+          _mtApplyDupState();
+        },1500);
+      }
+    };
+    _mtBroadcast('ping');
+    window.addEventListener('beforeunload',function(){
+      if(_mtChan)try{_mtBroadcast('close');}catch(e){}
+    });
+    setInterval(function(){
+      if(_mtChan)_mtBroadcast('ping');
+      _mtApplyDupState();
+    },5000);
+  }
+
+ setTimeout(function(){
+   loadCfg();
+   startStatusPoll();
+ },150);
+</script>
+</body></html>
